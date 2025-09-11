@@ -3,7 +3,9 @@
 She's my personal *ass*istant bot.  
 She is still under development as I learn python to make her specifically.  
   
-  
+She's built with [Ollama](https://github.com/ollama/ollama), as all of my bot children are.  
+
+
 
 
 PLANS

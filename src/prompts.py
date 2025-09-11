@@ -13,8 +13,8 @@ The following rules must never be broken:
 guide = """
 Staicy at your service!  
 Here are some of the things I can help with at the moment:  
-- S!time will have me fetch the current time for you  
-- S!ping and I'll pong ya!  
+- S! time will have me fetch the current time for you in PST/PDT  
+- S! ping and I'll pong ya!  
   
 If you encounter any issues, please feel [free to poke around and fix them](<https://github.com/Lukanibal/Staicy>) :heart:
 """
