@@ -62,7 +62,7 @@ async def on_message(message):
     if not "S!" in message.content and f"<@{staicy_id}>" in message.content \
         or message.author.id == creator_id and f"Staicy" in message.content:
         #reply = ollama_funcs.StaicyChat(message)
-        chat_session_current.append({'role': 'user', 'name': message.author.global_name, 'content': message.content});
+        chat_session_current.append({'role': 'user', 'name': message.author.global_name, 'content': message.content})
         response = await asyncio.to_thread(
         chat,
         model="Staicy",
@@ -72,24 +72,40 @@ async def on_message(message):
         if len(chat_session_current) > 128:
             chat_session_current.pop(0)
         hf.save_to_file("session.chat", chat_session_current)
+
+        if not f"<@{staicy_id}>" in message.content:
+            #reply = ollama_funcs.StaicyChat(message)
+            response = await asyncio.to_thread(
+            chat,
+            model="Staicy",
+            messages=[{'role': 'system', 'content': "reply only with the first unicode emoji the following message makes you think of and nothing else:"}, {'role': 'user', 'name': message.author.global_name, 'content': message.content}]
+            )
+            await message.add_reaction(response['message']['content'])
         
-        
+    #basic ass commands
     if "S!" in message.content:
         if "time" in message.content:
             current_time = datetime.datetime.now()
             await message.reply(f"It is currently {current_time.strftime('%H:%M')} on {current_time.strftime('%m/%d/%Y')}")
 
-    if "S!" in message.content:
+    
         if "guide" in message.content:
             await message.reply(prompts.guide, mention_author=True)
 
-    if "S!" in message.content:
+    
         if "ping" in message.content:
             await message.reply('pong', mention_author=True)
 
-    if "S!" in message.content:
-        if "ident" in message.content:
-            await message.reply(message.author.global_name, mention_author=True)
+    
+        if "status" in message.content:
+            status = message.content.replace("S!", "").replace("status", "")
+            await message.reply(status)
+            activity = discord.CustomActivity(name=status, emoji='', type=discord.ActivityType.custom)
+            await bot.change_presence(activity=activity)
+                
+
+    
+        
 
 StaicyStart()
 bot.run(bot_token)
