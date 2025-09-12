@@ -1,5 +1,6 @@
 import json
 
+
 # Function to save the list to a file
 def save_to_file(file_name, data):
     with open(file_name, 'w') as file:
@@ -15,3 +16,5 @@ def load_from_file(file_name):
     except json.JSONDecodeError:
         print("Error decoding JSON. Returning an empty list.")
         return []
+    
+
