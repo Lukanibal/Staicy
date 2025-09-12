@@ -12,6 +12,7 @@ from ollama import Client, chat
 from googleapiclient.discovery import build
 import dateparser
 import emoji as e
+import newsdataapi as news
 
 import prompts
 import ollama_funcs
@@ -31,18 +32,41 @@ staicy_id = os.getenv("STAICY_ID")
 creator_id = os.getenv("CREATOR_ID")
 search_key = os.getenv("SEARCH_API_KEY")
 cse_id = os.getenv("CSE_ID")
+news_key = os.getenv("NEWS_KEY")
 
 #google api setup
 service = build("customsearch", "v1", developerKey=search_key)
+
+#newsapi
+newsapi = news.NewsDataApiClient(apikey=news_key)
 
 async def google_search(search_term, **kwargs):
     res = service.cse().list(q=search_term, cx=cse_id, num=3, filter=1, **kwargs).execute()
     results = res['items']
     answer = ""
-    for result in results:
-        answer += f"{result['title']}  [source](<{result['link']}>)"
+    #for result in results:
+        #answer += f"{result['title']}: [source](<{result['link']}>)\r\n"
+
+    for index, result in enumerate(results):
+        if index == 0:  # Check if it's the first iteration
+            answer += f"**{result['title']}**: [source]({result['link']})\r\n"  # Change formatting for the first result
+        else:
+            answer += f"{result['title']}: [source](<{result['link']}>)\r\n"  # Normal formatting for 
     return answer
     
+async def get_news(query, country):
+    data = newsapi.latest_api(q=query, country=country, max_result=3)
+    if data['status'] == 'success':
+        articles = data['results']
+        for article in articles:
+            title = article['title']
+            link = article['link']
+            description = article['description']
+            pub_date = article['pubDate']
+
+            # Format the message
+            message = f"**{title}**\n{description}\nPublished on: {pub_date}\n[Read more]({link})"
+            return message
 
 class Staicy(discord.Client):
     def __init__(self):
@@ -87,7 +111,6 @@ def StaicyStart():
     print(f"# Client: {response.status}")
 
 
-
 #some very basic bot commands
 
 @bot.tree.command(name="ping", description="She'll pong ya!")
@@ -115,6 +138,14 @@ async def search(interaction: discord.Interaction, query: str):
     await interaction.response.defer(thinking=True)
     
     answer = await google_search(query)
+        
+    await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
+
+@bot.tree.command(name="news", description="Staicy will share the current affairs")
+async def news(interaction: discord.Interaction, query: str, country: str = "us"):
+    await interaction.response.defer(thinking=True)
+    
+    answer = await get_news(query, country)
         
     await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
 

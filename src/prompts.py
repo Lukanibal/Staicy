@@ -20,3 +20,10 @@ Here are some of the things I can help with at the moment:
   
 If you encounter any issues, please feel [free to poke around and fix them](<https://github.com/Lukanibal/Staicy>) :heart:
 """
+
+
+determinator_prompt = """
+You are a input output machine.
+You will determine if the input is an internet search or not.
+If the input is a request for a web search, you will respond with just "tool". Otherwise you will return "message"
+"""
