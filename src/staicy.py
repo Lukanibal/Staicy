@@ -42,7 +42,7 @@ service = build("customsearch", "v1", developerKey=search_key)
 newsapi = news.NewsDataApiClient(apikey=news_key)
 
 async def google_search(search_term, **kwargs):
-    res = service.cse().list(q=search_term, cx=cse_id, num=3, filter=1, **kwargs).execute()
+    res = service.cse().list(q=search_term, cx=cse_id, num=3, filter=1, safe='medium', **kwargs).execute()
     results = res['items']
     answer = ""
     #for result in results:
@@ -105,7 +105,7 @@ def StaicyStart():
     client = Client()
     response = client.create(
         model="Staicy",
-        from_="gemma3",
+        from_="gemma3:12b-it-qat",
         system=prompts.system_prompt,
         stream=False,
     )
@@ -132,6 +132,22 @@ async def guide(interaction: discord.Interaction):
 @bot.tree.command(name="greet", description="Greet a user")
 async def greet(interaction: discord.Interaction, user: discord.User):
     await interaction.response.send_message(f"Hello, {user.mention}!")
+
+@bot.tree.command(name="redact", description="Redacts a message that Staicy's sent, only for emergencies!")
+async def redact(interaction: discord.Interaction, id: str):
+    await interaction.response.defer(thinking=False)
+    if interaction.user.name == "lukan.spellweaver":
+        message = await interaction.channel.fetch_message(id)
+        await message.delete()
+        await interaction.followup.send("Done!")
+
+@bot.tree.command(name="obliviate", description="Does what it says on the tin, obliviates her.")
+async def obliviate(interaction: discord.Interaction):
+    if interaction.user.name == "lukan.spellweaver":
+        chat_session_current.clear()
+        await interaction.response.send_message("Huh?")
+    else:
+        await interaction.response.send_message("Stupefy!")
 
 
 @bot.tree.command(name="search", description="Staicy will do a quick websearch for you via Google!")
@@ -211,16 +227,18 @@ async def on_message(message):
                         
                         prompt = {'role': 'user', 'name': message.author.global_name, 'content': msg, 'images': [file_path]}
                         
-
+            chat_session_current.append(prompt)
             response = await asyncio.to_thread(
             chat,
             model="Staicy",
-            messages=[prompt])
+            messages=chat_session_current)
             await message.reply(response['message']['content'], mention_author=True)
-            chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
-            if len(chat_session_current) > 20:
-                chat_session_current.pop(0)
-            hf.save_to_file("session.chat", chat_session_current)
+
+        
+        chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
+        if len(chat_session_current) > 15:
+            chat_session_current.pop(0)
+        hf.save_to_file("session.chat", chat_session_current)
 
     if True:
         response = await asyncio.to_thread(

@@ -7,11 +7,11 @@ She's built with [Ollama](https://github.com/ollama/ollama), as all of my bot ch
 She uses [discord.py](https://pypi.org/project/discord.py/) for her discord bits.  
 Her `/news` command uses [NewsData.io](https://newsdata.io)  
 Her `/search` command uses [Google's custom search api](https://developers.google.com/custom-search)  
-
+Powered by Gemma3
 PLANS
 -
 I plan to make Staicy able to do the following things at least:  
-✔️ set reminders  
-✔️ do web searches  
-✔️ see/read images  
+- ✔️ set reminders  
+- ✔️ do web searches  
+- ✔️ see/read images  
 - maybe generate text documents?  
