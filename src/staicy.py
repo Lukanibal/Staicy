@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import discord
+import requests
 import bot_functions as botfuncs
 import datetime
 from discord import app_commands
@@ -187,20 +188,39 @@ async def on_message(message):
     # we do not want the bot to reply to itself
     if message.author == bot.user:
         return
-
+    
     if bot.user in message.mentions:
-        #reply = ollama_funcs.StaicyChat(message)
-        msg = message.content.replace(f"<@{staicy_id}>", "")
-        chat_session_current.append({'role': 'user', 'name': message.author.global_name, 'content': msg})
-        response = await asyncio.to_thread(
-        chat,
-        model="Staicy",
-        messages=chat_session_current)
-        await message.reply(response['message']['content'], mention_author=True)
-        chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
-        if len(chat_session_current) > 20:
-            chat_session_current.pop(0)
-        hf.save_to_file("session.chat", chat_session_current)
+        async with message.channel.typing():
+            msg = message.content.replace(f"<@{staicy_id}>", "")
+            prompt = {'role': 'user', 'name': message.author.global_name, 'content': msg}
+            if message.attachments:
+                # Filter for image attachments
+                image_attachments = [attachment for attachment in message.attachments if attachment.content_type and attachment.content_type.startswith('image/')]
+
+                if image_attachments:
+                    image_url = image_attachments[0].url
+                    # Download the image
+                    response = requests.get(image_url)
+                    if response.status_code == 200:
+                        # Save the image to a file
+                        file_path = os.path.join("images", image_attachments[0].filename)  # Specify the directory and filename
+                        os.makedirs("images", exist_ok=True)  # Create the directory if it doesn't exist
+
+                        with open(file_path, 'wb') as f:
+                            f.write(response.content)
+                        
+                        prompt = {'role': 'user', 'name': message.author.global_name, 'content': msg, 'images': [file_path]}
+                        
+
+            response = await asyncio.to_thread(
+            chat,
+            model="Staicy",
+            messages=[prompt])
+            await message.reply(response['message']['content'], mention_author=True)
+            chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
+            if len(chat_session_current) > 20:
+                chat_session_current.pop(0)
+            hf.save_to_file("session.chat", chat_session_current)
 
     if True:
         response = await asyncio.to_thread(

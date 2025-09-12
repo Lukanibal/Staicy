@@ -13,5 +13,5 @@ PLANS
 I plan to make Staicy able to do the following things at least:  
 ✔️ set reminders  
 ✔️ do web searches  
-- see/read images  
+✔️ see/read images  
 - maybe generate text documents?  
