@@ -18,12 +18,12 @@
       "model": "VibeVoice-1.5B",
       "attention_type": "sage",
       "free_memory_after_generate": true,
-      "diffusion_steps": 30,
-      "seed": 38,
+      "diffusion_steps": 25,
+      "seed": 40,
       "cfg_scale": 1.45,
       "use_sampling": true,
-      "temperature": 0.95,
-      "top_p": 0.95,
+      "temperature": 0.55,
+      "top_p": 0.9,
       "max_words_per_chunk": 250,
       "voice_to_clone": [
         "15",
@@ -47,7 +47,7 @@
   "40": {
     "inputs": {
       "filename_prefix": "",
-      "quality": "320k",
+      "quality": "128k",
       "audioUI": "",
       "audio": [
         "37",

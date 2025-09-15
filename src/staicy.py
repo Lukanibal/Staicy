@@ -156,6 +156,7 @@ async def ltts(interaction: discord.Interaction, text: str):
     job_id = ProcessTTS()
     await check_comfyui_api(job_id)
     await interaction.followup.send(f"{interaction.user.mention}: {text}", file=discord.File(tts_output_path))
+    os.remove(tts_output_path)
     
     """# Create a gTTS object
     tts = gTTS(text=text, lang=lang)
@@ -234,7 +235,7 @@ async def imagine(interaction: discord.Interaction, prompt: str):
     job_id = ProcessTTS("Painter.json")
     await check_comfyui_api(job_id)
     await interaction.followup.send(f"{interaction.user.mention}: {prompt}", file=discord.File(img_output_path))
-    await os.remove(img_output_path)
+    os.remove(img_output_path)
 
 @bot.tree.command(name="schedule", description="Schedule a message with a date and time")
 async def schedule(interaction: discord.Interaction, name: str, time: str, date: str):
