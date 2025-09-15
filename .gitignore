@@ -161,4 +161,3 @@ cython_debug/
 
 #custom stuff
 *.chat
-/images/*.*
