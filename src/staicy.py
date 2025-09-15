@@ -150,13 +150,13 @@ async def news(interaction: discord.Interaction, query: str, country: str = "us"
     await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
 
 @bot.tree.command(name="status", description="If you're Lukan, this will set her status")
-async def status(interaction: discord.Interaction, status: str):
-    if interaction.user.name == "lukan.spellweaver":
-        activity = discord.CustomActivity(name=status, emoji='', type=discord.ActivityType.custom)
+async def status(interaction: discord.Interaction, status: str = ""):
+    if interaction.user.id == lukan_id:
+        activity = botfuncs.command_set_activity(status)
         await bot.change_presence(activity=activity)
-        await interaction.response.send_message(f"New status set: {status}")
+        await interaction.response.send_message(f"New status set!: {activity.name}")
     else:
-        await interaction.response.send_message(f"Current status: {bot.activity}")
+        await interaction.response.send_message(f"Current status: {activity.name}")
 
 @bot.tree.command(name="cache_refresh", description="If you're Lukan, this will clear her cached messages")
 async def CacheRefresh(interaction: discord.Interaction, status: str = "Filed away!"):

@@ -2,6 +2,7 @@
 **Staicy**  
 -
 She's my personal assistant bot.  
+She takes the question "Is that A.I.?" and answers it with a resounding "YES!"  
 She is still under development as I learn python to make her specifically.  
 Here are some tools that help her work:  
 She uses [discord.py](https://pypi.org/project/discord.py/) for her discord bits.  
