@@ -1,0 +1,11 @@
+
+from dotenv import load_dotenv
+import os
+import asyncio
+
+load_dotenv()
+comfy_path = os.getenv('COMFY_PATH')
+
+async def SaveOutput( _text: str):
+    with open(f'{comfy_path}/input/arttext.txt', 'w') as file:
+        file.write(_text)

@@ -1,0 +1,62 @@
+{
+  "15": {
+    "inputs": {
+      "audio": "audio(2).mp3",
+      "audioUI": ""
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "LoadAudio"
+    }
+  },
+  "37": {
+    "inputs": {
+      "text": [
+        "39",
+        0
+      ],
+      "model": "VibeVoice-1.5B",
+      "attention_type": "sage",
+      "free_memory_after_generate": true,
+      "diffusion_steps": 25,
+      "seed": 40,
+      "cfg_scale": 1.45,
+      "use_sampling": true,
+      "temperature": 0.55,
+      "top_p": 0.9,
+      "max_words_per_chunk": 250,
+      "voice_to_clone": [
+        "15",
+        0
+      ]
+    },
+    "class_type": "VibeVoiceSingleSpeakerNode",
+    "_meta": {
+      "title": "VibeVoice Single Speaker"
+    }
+  },
+  "39": {
+    "inputs": {
+      "file": "input/text.txt"
+    },
+    "class_type": "LoadTextFromFileNode",
+    "_meta": {
+      "title": "VibeVoice Load Text From File"
+    }
+  },
+  "40": {
+    "inputs": {
+      "filename_prefix": "",
+      "quality": "128k",
+      "audioUI": "",
+      "audio": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "SaveAudioMP3",
+    "_meta": {
+      "title": "Save Audio (MP3)"
+    }
+  }
+}

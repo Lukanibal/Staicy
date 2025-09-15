@@ -14,6 +14,8 @@ from googleapiclient.discovery import build
 import dateparser
 import emoji as e
 import newsdataapi as news
+#from gtts import gTTS
+from ltts import SaveOutput, ProcessTTS, check_comfyui_api
 
 import prompts
 import ollama_funcs
@@ -34,6 +36,9 @@ creator_id = os.getenv("CREATOR_ID")
 search_key = os.getenv("SEARCH_API_KEY")
 cse_id = os.getenv("CSE_ID")
 news_key = os.getenv("NEWS_KEY")
+lukan_id = int(os.getenv("LUKAN_ID"))
+tts_output_path = os.getenv("TTS_OUTPUT_PATH")
+img_output_path = os.getenv("IMG_OUTPUT_PATH")
 
 #google api setup
 service = build("customsearch", "v1", developerKey=search_key)
@@ -105,12 +110,28 @@ def StaicyStart():
     client = Client()
     response = client.create(
         model="Staicy",
-        from_="gemma3:12b-it-qat",
+        from_="gemma3:4b",
         system=prompts.system_prompt,
         stream=False,
     )
     print(f"# Client: {response.status}")
 
+async def StaicyStop():
+    response = await asyncio.to_thread(
+            chat,
+            model="Staicy",
+            keep_alive=0)
+
+
+async def split_string(text, chunk_size=1500):
+    # Create a list to hold the chunks
+    chunks = []
+    
+    # Loop through the text and create chunks
+    for i in range(0, len(text), chunk_size):
+        await chunks.append(text[i:i + chunk_size])
+    
+    return chunks
 
 #some very basic bot commands
 
@@ -128,6 +149,27 @@ async def time(interaction: discord.Interaction):
 async def guide(interaction: discord.Interaction):
     await interaction.response.send_message(prompts.guide)
 
+@bot.tree.command(name="tts", description="Have Staicy's beautiful voice regale you with whatever you please")
+async def ltts(interaction: discord.Interaction, text: str):
+    await interaction.response.defer(thinking=True)
+    await SaveOutput(e.replace_emoji(text, ""))
+    job_id = ProcessTTS()
+    await check_comfyui_api(job_id)
+    await interaction.followup.send(f"{interaction.user.mention}: {text}", file=discord.File(tts_output_path))
+    
+    """# Create a gTTS object
+    tts = gTTS(text=text, lang=lang)
+    
+    # Save the audio file
+    audio_file = "output.mp3"
+    tts.save(audio_file)
+
+    # Send the audio file back to the user
+    await interaction.followup.send(f"```{text}```", file=discord.File(audio_file))
+
+    # Optionally, delete the file after sending
+    os.remove(audio_file)"""
+    
 
 @bot.tree.command(name="greet", description="Greet a user")
 async def greet(interaction: discord.Interaction, user: discord.User):
@@ -136,14 +178,16 @@ async def greet(interaction: discord.Interaction, user: discord.User):
 @bot.tree.command(name="redact", description="Redacts a message that Staicy's sent, only for emergencies!")
 async def redact(interaction: discord.Interaction, id: str):
     await interaction.response.defer(thinking=False)
-    if interaction.user.name == "lukan.spellweaver":
+    if interaction.user.id == lukan_id:
         message = await interaction.channel.fetch_message(id)
         await message.delete()
         await interaction.followup.send("Done!")
+    else:
+        await interaction.followup.send("I only redact things for Mr.Lukan!")
 
 @bot.tree.command(name="obliviate", description="Does what it says on the tin, obliviates her.")
 async def obliviate(interaction: discord.Interaction):
-    if interaction.user.name == "lukan.spellweaver":
+    if interaction.user.id == lukan_id:
         chat_session_current.clear()
         await interaction.response.send_message("Huh?")
     else:
@@ -174,12 +218,28 @@ async def status(interaction: discord.Interaction, status: str):
         await interaction.response.send_message(f"New status set: {status}")
     else:
         await interaction.response.send_message(f"Current status: {bot.activity}")
+
+@bot.tree.command(name="cache_refresh", description="If you're Lukan, this will clear her cached messages")
+async def CacheRefresh(interaction: discord.Interaction, status: str = "Filed away!"):
+    if interaction.user.name == "lukan.spellweaver":
+        chat_session_current.clear()
+        await interaction.response.send_message(f"{status}")
+    else:
+        await interaction.response.send_message(f"Only Mr.Lukan can perform my system commands!")
     
+@bot.tree.command(name="imagine", description="make Staicy paint a picture")
+async def imagine(interaction: discord.Interaction, prompt: str):
+    await interaction.response.defer(thinking=True)
+    await SaveOutput(prompt, "imagetext.txt")
+    job_id = ProcessTTS("Painter.json")
+    await check_comfyui_api(job_id)
+    await interaction.followup.send(f"{interaction.user.mention}: {prompt}", file=discord.File(img_output_path))
+    await os.remove(img_output_path)
 
 @bot.tree.command(name="schedule", description="Schedule a message with a date and time")
 async def schedule(interaction: discord.Interaction, name: str, time: str, date: str):
     if not interaction.user.name == "lukan.spellweaver":
-        await interaction.response.send_message("I can only set reminders for Lukan!")
+        await interaction.response.send_message("I can only set reminders for Mr.Lukan!")
         return
     await interaction.response.defer(thinking=True)
     # Extract the date and time
@@ -232,11 +292,46 @@ async def on_message(message):
             chat,
             model="Staicy",
             messages=chat_session_current)
-            await message.reply(response['message']['content'], mention_author=True)
+            await StaicyStop()
 
+            if "(tts)" in msg:
+                await SaveOutput(e.replace_emoji(response['message']['content'], ""))
+                job_id = ProcessTTS()
+                await check_comfyui_api(job_id)
+                await message.reply(response['message']['content'], mention_author=True, file=discord.File(tts_output_path))
+                await os.remove(tts_output_path)
+            
+            if "(img)" in msg:
+                await SaveOutput(e.replace_emoji(response['message']['content'], ""), "imagetext.txt")
+                job_id = ProcessTTS("Painter.json")
+                await check_comfyui_api(job_id)
+                await message.reply(msg.replace("(img)", ""), mention_author=True, file=discord.File(img_output_path))
+                await os.remove(img_output_path)
+            
+            if "(tts)" not in msg and "(img)" not in msg:
+                await message.reply(response['message']['content'], mention_author=True)
+                    
+
+            """#legacy tts code
+            if "(tts)" in message.content:
+                await StaicyStop()
+                # Create a gTTS object
+                tts = gTTS(text=response['message']['content'], lang='en')
+                
+                # Save the audio file
+                audio_file = "output.mp3"
+                tts.save(audio_file)
+
+                # Send the audio file back to the user
+                await message.reply(f"```{response['message']['content']}```", mention_author=True, file=discord.File(audio_file))
+
+                # Optionally, delete the file after sending
+                os.remove(audio_file)
+            else:
+            """
         
         chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
-        if len(chat_session_current) > 15:
+        if len(chat_session_current) > 10:
             chat_session_current.pop(0)
         hf.save_to_file("session.chat", chat_session_current)
 
@@ -249,6 +344,7 @@ async def on_message(message):
         emote = e.distinct_emoji_list(response['message']['content'])
 
         await message.add_reaction(emote[0])
+        await StaicyStop()
     
             
                 

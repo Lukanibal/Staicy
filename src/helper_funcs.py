@@ -17,4 +17,3 @@ def load_from_file(file_name):
         print("Error decoding JSON. Returning an empty list.")
         return []
     
-
