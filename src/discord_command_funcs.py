@@ -5,7 +5,7 @@ import dateparser
 from ollama import Client, chat
 from dotenv import load_dotenv
 import helper_funcs as hf
-from Staicy.src.ltts import SaveOutput, ProcessTTS, check_comfyui_api
+from ltts import SaveOutput, ProcessTTS, check_comfyui_api
 
 load_dotenv()
 img_output_path = os.getenv("IMG_OUTPUT_PATH")
@@ -33,8 +33,7 @@ async def imagine(interaction, prompt: str):
     response = await asyncio.to_thread(
         chat,
         model="Staicy",
-        messages=[new_prompt])
+        messages=[new_prompt],
+        stream=False)
     chunks = await hf.split_string(response['message']['content'])
     return chunks
-
-

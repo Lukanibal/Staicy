@@ -172,7 +172,7 @@ async def imagine(interaction: discord.Interaction, prompt: str):
     chunks = await dcf.imagine(interaction, prompt)
     for index, chunk in enumerate(chunks):
         if index == 0:
-            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{chunk[0]}", file=discord.File(img_output_path))
+            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{chunk}", file=discord.File(img_output_path))
         else:
             await interaction.followup.send(chunk)
     os.remove(img_output_path)
@@ -273,25 +273,6 @@ async def on_message(message):
                     else:
                         await message.channel.send(chunk)
                         
-                    
-
-            """#legacy tts code
-            if "(tts)" in message.content:
-                await StaicyStop()
-                # Create a gTTS object
-                tts = gTTS(text=response['message']['content'], lang='en')
-                
-                # Save the audio file
-                audio_file = "output.mp3"
-                tts.save(audio_file)
-
-                # Send the audio file back to the user
-                await message.reply(f"```{response['message']['content']}```", mention_author=True, file=discord.File(audio_file))
-
-                # Optionally, delete the file after sending
-                os.remove(audio_file)
-            else:
-            """
         
         chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
         if len(chat_session_current) > 10:
