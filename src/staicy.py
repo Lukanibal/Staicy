@@ -183,9 +183,25 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
         await interaction.response.send_message("I can only set reminders for Mr.Lukan!")
         return
     await interaction.response.defer(thinking=True)
+    # Extract the date and time
+    reminder_time = dateparser.parse(time)
+    if reminder_time is None:
+        await interaction.followup.send("I couldn't understand the time you provided. Please try again.")
+        return
+    now = datetime.datetime.now()
+    if reminder_time < now:
+        await interaction.followup.send("Oh dear, that time's gone by!\r\nCan you please try again with a date and time in the future?")
+        return
+    delay = (reminder_time - now).total_seconds()
+    await interaction.followup.send(f"Reminder set for {reminder_time.strftime('%Y-%m-%d %I:%M %p')}.")
+
+    # Wait for the specified time
+    await asyncio.sleep(delay)
+    # Send the reminder
+    await interaction.followup.send(f"{interaction.user.mention}:  {name}")
 
     # hand over info to the function
-    delay, formated = dcf.schedule(name, time, date)
+    delay, formatted = await dcf.schedule(name, time, date)
 
     if delay is None or -1:
         await interaction.followup.send("I couldn't understand the time you provided. Please try again.")
@@ -194,7 +210,7 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
         await interaction.followup.send("Oh dear, that time's gone by!\r\nCan you please try again with a date and time in the future?")
         return
 
-    await interaction.followup.send(f"Reminder set for {formated}.")
+    await interaction.followup.send(f"Reminder set for {formatted}.")
     # Wait for the specified time
     # todo -- probably not a good thing to just have this command waiting for the set time, probably change it to some time controller
     # like wise because of this current way of doing it, this is probably the best im able to clean up
