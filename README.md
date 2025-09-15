@@ -20,4 +20,16 @@ Her Commands so far:
   
   
 Including `(tts)` will make her respond to your message via VibeVoice, which can take some time depending on the setup.  
-Includine `(img)` will act the same as the `/imagine` command, but uses your message as tyhe prompt.
+Includine `(img)` will act the same as the `/imagine` command, but uses your message as tyhe prompt.  
+  
+
+A few examples:
+-
+the `/imagine` command, makes basic AI art, I will not be improving it, and it may not be sold:  
+![image.png](https://github.com/Lukanibal/Staicy/blob/main/images/imagine.png)  
+  
+the `/tts` command, returns a file named `._00001_.mp3`, it overwrites this to save memory:  
+![image.png](https://github.com/Lukanibal/Staicy/blob/main/images/tts.png)  
+  
+the `/search` command in action:  
+![image.png](https://github.com/Lukanibal/Staicy/blob/main/images/search.png)  
