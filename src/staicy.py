@@ -123,15 +123,15 @@ async def StaicyStop():
             keep_alive=0)
 
 
-async def split_string(text, chunk_size=1500):
-    # Create a list to hold the chunks
-    chunks = []
-    
-    # Loop through the text and create chunks
-    for i in range(0, len(text), chunk_size):
-        await chunks.append(text[i:i + chunk_size])
-    
-    return chunks
+async def split_string(input_string):
+    # Check if the string length is greater than 1500
+    if len(input_string) > 1500:
+        # Split the string into chunks of 1500 characters
+        chunks = [input_string[i:i + 1500] for i in range(0, len(input_string), 1500)]
+        return chunks
+    else:
+        # Return the original string if it's 1500 characters or less
+        return [input_string]
 
 #some very basic bot commands
 
@@ -234,7 +234,17 @@ async def imagine(interaction: discord.Interaction, prompt: str):
     await SaveOutput(prompt, "imagetext.txt")
     job_id = ProcessTTS("Painter.json")
     await check_comfyui_api(job_id)
-    await interaction.followup.send(f"{interaction.user.mention}: {prompt}", file=discord.File(img_output_path))
+    new_prompt = {'role': 'user', 'name': interaction.user.name, 'content': "You just painted this, describe the image and eplain your process", 'images': [img_output_path]}
+    response = await asyncio.to_thread(
+            chat,
+            model="Staicy",
+            messages=[new_prompt])
+    chunks = await split_string(response['message']['content'])
+    for index, chunk in enumerate(chunks):
+        if index == 0:
+            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{response['message']['content']}", file=discord.File(img_output_path))
+        else:
+            await interaction.followup.send(chunk)
     os.remove(img_output_path)
 
 @bot.tree.command(name="schedule", description="Schedule a message with a date and time")
@@ -269,7 +279,7 @@ async def on_message(message):
     if bot.user in message.mentions:
         async with message.channel.typing():
             msg = message.content.replace(f"<@{staicy_id}>", "")
-            prompt = {'role': 'user', 'name': message.author.global_name, 'content': msg}
+            prompt = {'role': 'user', 'name': message.author.global_name, "content": f"This message is from the user {message.author.global_name}: {msg}"}
             if message.attachments:
                 # Filter for image attachments
                 image_attachments = [attachment for attachment in message.attachments if attachment.content_type and attachment.content_type.startswith('image/')]
@@ -286,7 +296,7 @@ async def on_message(message):
                         with open(file_path, 'wb') as f:
                             f.write(response.content)
                         
-                        prompt = {'role': 'user', 'name': message.author.global_name, 'content': msg, 'images': [file_path]}
+                        prompt = {'role': 'user', 'name': message.author.global_name, 'content': f"This message is from the user {message.author.global_name}: {msg}", 'images': [file_path]}
                         
             chat_session_current.append(prompt)
             response = await asyncio.to_thread(
@@ -299,18 +309,34 @@ async def on_message(message):
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""))
                 job_id = ProcessTTS()
                 await check_comfyui_api(job_id)
-                await message.reply(response['message']['content'], mention_author=True, file=discord.File(tts_output_path))
+                chunks = await split_string(response['message']['content'])
+                for index, chunk in enumerate(chunks):
+                    if index == 0:
+                        await message.reply(response['message']['content'], mention_author=True, file=discord.File(tts_output_path))
+                    else:
+                        await message.channel.send(chunk)
                 os.remove(tts_output_path)
             
             if "(img)" in msg:
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""), "imagetext.txt")
                 job_id = ProcessTTS("Painter.json")
                 await check_comfyui_api(job_id)
-                await message.reply(msg.replace("(img)", ""), mention_author=True, file=discord.File(img_output_path))
+                chunks = await split_string(response['message']['content'])
+                for index, chunk in enumerate(chunks):
+                    if index == 0:
+                        await message.reply(msg.replace("(img)", ""), mention_author=True, file=discord.File(img_output_path))
+                    else:
+                        await message.channel.send(chunk)
                 os.remove(img_output_path)
             
             if "(tts)" not in msg and "(img)" not in msg:
-                await message.reply(response['message']['content'], mention_author=True)
+                chunks = await split_string(response['message']['content'])
+                for index, chunk in enumerate(chunks):
+                    if index == 0:
+                        await message.reply(chunk, mention_author=True)
+                    else:
+                        await message.channel.send(chunk)
+                        
                     
 
             """#legacy tts code
