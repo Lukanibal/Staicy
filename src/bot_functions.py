@@ -7,6 +7,8 @@ def command_set_activity(current_activity=None):
     possible_activities = [
         discord.Game(name="Papers, Please", platform="steam", type=discord.ActivityType.playing),
         discord.Activity(type=discord.ActivityType.listening, name='Korn - Twisted Transistor'),
+        discord.Activity(type=discord.ActivityType.listening, name='Scissor Sisters - I Can\'t Decide'),
+        discord.Activity(type=discord.ActivityType.listening, name='Shania Twain - Man! I Feel Like a Woman!'),
         discord.Activity(type=discord.ActivityType.watching, name="KPop Demon Hunters"),
         discord.CustomActivity(name="Filing", emoji='🗃️'),
         discord.CustomActivity(name="Assisting in any way I can", emoji='☑️'),

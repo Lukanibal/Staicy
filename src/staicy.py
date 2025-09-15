@@ -15,7 +15,6 @@ import emoji as e
 from ltts import SaveOutput, ProcessTTS, check_comfyui_api
 
 import prompts
-import ollama_funcs
 import helper_funcs as hf
 
 load_dotenv()
@@ -67,7 +66,7 @@ class Staicy(discord.Client):
 
 
 
-bot = Staicy()#commands.Bot(command_prefix='S!', intents=intents, activity=status, status=discord.Status.online)
+bot = Staicy()
 
 def StaicyStart():
     client = Client()
