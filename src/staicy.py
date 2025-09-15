@@ -14,6 +14,8 @@ import dateparser
 import emoji as e
 from ltts import SaveOutput, ProcessTTS, check_comfyui_api
 
+import discord_command_funcs as dcf
+
 import prompts
 import helper_funcs as hf
 
@@ -167,18 +169,10 @@ async def CacheRefresh(interaction: discord.Interaction, status: str = "Filed aw
 @bot.tree.command(name="imagine", description="make Staicy paint a picture")
 async def imagine(interaction: discord.Interaction, prompt: str):
     await interaction.response.defer(thinking=True)
-    await SaveOutput(prompt, "imagetext.txt")
-    job_id = ProcessTTS("Painter.json")
-    await check_comfyui_api(job_id)
-    new_prompt = {'role': 'user', 'name': interaction.user.name, 'content': "You just painted this, describe the image and eplain your process", 'images': [img_output_path]}
-    response = await asyncio.to_thread(
-            chat,
-            model="Staicy",
-            messages=[new_prompt])
-    chunks = await hf.split_string(response['message']['content'])
+    chunks = await dcf.imagine(interaction, prompt)
     for index, chunk in enumerate(chunks):
         if index == 0:
-            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{response['message']['content']}", file=discord.File(img_output_path))
+            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{chunk}", file=discord.File(img_output_path))
         else:
             await interaction.followup.send(chunk)
     os.remove(img_output_path)
@@ -202,6 +196,24 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
     await interaction.followup.send(f"Reminder set for {reminder_time.strftime('%Y-%m-%d %I:%M %p')}.")
 
     # Wait for the specified time
+    await asyncio.sleep(delay)
+    # Send the reminder
+    await interaction.followup.send(f"{interaction.user.mention}:  {name}")
+
+    # hand over info to the function
+    delay, formatted = await dcf.schedule(name, time, date)
+
+    if delay is None or -1:
+        await interaction.followup.send("I couldn't understand the time you provided. Please try again.")
+        return
+    if delay == -2:
+        await interaction.followup.send("Oh dear, that time's gone by!\r\nCan you please try again with a date and time in the future?")
+        return
+
+    await interaction.followup.send(f"Reminder set for {formatted}.")
+    # Wait for the specified time
+    # todo -- probably not a good thing to just have this command waiting for the set time, probably change it to some time controller
+    # like wise because of this current way of doing it, this is probably the best im able to clean up
     await asyncio.sleep(delay)
     # Send the reminder
     await interaction.followup.send(f"{interaction.user.mention}:  {name}")
@@ -277,25 +289,6 @@ async def on_message(message):
                     else:
                         await message.channel.send(chunk)
                         
-                    
-
-            """#legacy tts code
-            if "(tts)" in message.content:
-                await StaicyStop()
-                # Create a gTTS object
-                tts = gTTS(text=response['message']['content'], lang='en')
-                
-                # Save the audio file
-                audio_file = "output.mp3"
-                tts.save(audio_file)
-
-                # Send the audio file back to the user
-                await message.reply(f"```{response['message']['content']}```", mention_author=True, file=discord.File(audio_file))
-
-                # Optionally, delete the file after sending
-                os.remove(audio_file)
-            else:
-            """
         
         chat_session_current.append({'role': 'assistant', 'content': response['message']['content']})
         if len(chat_session_current) > 10:
