@@ -10,11 +10,8 @@ from dotenv import load_dotenv
 from pathlib import Path
 from discord.ext import commands
 from ollama import Client, chat
-from googleapiclient.discovery import build
 import dateparser
 import emoji as e
-import newsdataapi as news
-#from gtts import gTTS
 from ltts import SaveOutput, ProcessTTS, check_comfyui_api
 
 import prompts
@@ -22,57 +19,25 @@ import ollama_funcs
 import helper_funcs as hf
 
 load_dotenv()
+
+#=============================================#
+##################CHAT VARS####################
+#=============================================#
 chat_session_current = []
-#set some variables for ollama
 session_file = Path("session.chat")
 chat_session_current = hf.load_from_file("session.chat")
 
-    
-
-#get api keys
+#=============================================#
+##################API SETUP####################
+#=============================================#
 bot_token = os.getenv("BOT_TOKEN")
 staicy_id = os.getenv("STAICY_ID")
 creator_id = os.getenv("CREATOR_ID")
-search_key = os.getenv("SEARCH_API_KEY")
-cse_id = os.getenv("CSE_ID")
-news_key = os.getenv("NEWS_KEY")
 lukan_id = int(os.getenv("LUKAN_ID"))
 tts_output_path = os.getenv("TTS_OUTPUT_PATH")
 img_output_path = os.getenv("IMG_OUTPUT_PATH")
 
-#google api setup
-service = build("customsearch", "v1", developerKey=search_key)
 
-#newsapi
-newsapi = news.NewsDataApiClient(apikey=news_key)
-
-async def google_search(search_term, **kwargs):
-    res = service.cse().list(q=search_term, cx=cse_id, num=3, filter=1, safe='medium', **kwargs).execute()
-    results = res['items']
-    answer = ""
-    #for result in results:
-        #answer += f"{result['title']}: [source](<{result['link']}>)\r\n"
-
-    for index, result in enumerate(results):
-        if index == 0:  # Check if it's the first iteration
-            answer += f"**{result['title']}**: [source]({result['link']})\r\n"  # Change formatting for the first result
-        else:
-            answer += f"{result['title']}: [source](<{result['link']}>)\r\n"  # Normal formatting for 
-    return answer
-    
-async def get_news(query, country):
-    data = newsapi.latest_api(q=query, country=country, max_result=3)
-    if data['status'] == 'success':
-        articles = data['results']
-        for article in articles:
-            title = article['title']
-            link = article['link']
-            description = article['description']
-            pub_date = article['pubDate']
-
-            # Format the message
-            message = f"**{title}**\n{description}\nPublished on: {pub_date}\n[Read more]({link})"
-            return message
 
 class Staicy(discord.Client):
     def __init__(self):
@@ -102,8 +67,6 @@ class Staicy(discord.Client):
 
 
 
-
-
 bot = Staicy()#commands.Bot(command_prefix='S!', intents=intents, activity=status, status=discord.Status.online)
 
 def StaicyStart():
@@ -123,22 +86,12 @@ async def StaicyStop():
             keep_alive=0)
 
 
-async def split_string(input_string):
-    # Check if the string length is greater than 1500
-    if len(input_string) > 1500:
-        # Split the string into chunks of 1500 characters
-        chunks = [input_string[i:i + 1500] for i in range(0, len(input_string), 1500)]
-        return chunks
-    else:
-        # Return the original string if it's 1500 characters or less
-        return [input_string]
-
-#some very basic bot commands
-
+#=============================================#
+##################COMMANDS#####################
+#=============================================#
 @bot.tree.command(name="ping", description="She'll pong ya!")
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message('pong!')
-
 
 @bot.tree.command(name="time", description="returns the current time in Lukan's timezone(PST/PDT)")
 async def time(interaction: discord.Interaction):
@@ -171,7 +124,6 @@ async def ltts(interaction: discord.Interaction, text: str):
     # Optionally, delete the file after sending
     os.remove(audio_file)"""
     
-
 @bot.tree.command(name="greet", description="Greet a user")
 async def greet(interaction: discord.Interaction, user: discord.User):
     await interaction.response.send_message(f"Hello, {user.mention}!")
@@ -194,12 +146,11 @@ async def obliviate(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("Stupefy!")
 
-
 @bot.tree.command(name="search", description="Staicy will do a quick websearch for you via Google!")
 async def search(interaction: discord.Interaction, query: str):
     await interaction.response.defer(thinking=True)
     
-    answer = await google_search(query)
+    answer = await hf.google_search(query)
         
     await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
 
@@ -207,7 +158,7 @@ async def search(interaction: discord.Interaction, query: str):
 async def news(interaction: discord.Interaction, query: str, country: str = "us"):
     await interaction.response.defer(thinking=True)
     
-    answer = await get_news(query, country)
+    answer = await hf.get_news(query, country)
         
     await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
 
@@ -239,7 +190,7 @@ async def imagine(interaction: discord.Interaction, prompt: str):
             chat,
             model="Staicy",
             messages=[new_prompt])
-    chunks = await split_string(response['message']['content'])
+    chunks = await hf.split_string(response['message']['content'])
     for index, chunk in enumerate(chunks):
         if index == 0:
             await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{response['message']['content']}", file=discord.File(img_output_path))
@@ -270,6 +221,10 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
     # Send the reminder
     await interaction.followup.send(f"{interaction.user.mention}:  {name}")
 
+
+#=============================================#
+##############MESSAGE HANDLING#################
+#=============================================#
 @bot.event 
 async def on_message(message):
     # we do not want the bot to reply to itself
@@ -309,7 +264,7 @@ async def on_message(message):
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""))
                 job_id = ProcessTTS()
                 await check_comfyui_api(job_id)
-                chunks = await split_string(response['message']['content'])
+                chunks = await hf.split_string(response['message']['content'])
                 for index, chunk in enumerate(chunks):
                     if index == 0:
                         await message.reply(response['message']['content'], mention_author=True, file=discord.File(tts_output_path))
@@ -321,7 +276,7 @@ async def on_message(message):
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""), "imagetext.txt")
                 job_id = ProcessTTS("Painter.json")
                 await check_comfyui_api(job_id)
-                chunks = await split_string(response['message']['content'])
+                chunks = await hf.split_string(response['message']['content'])
                 for index, chunk in enumerate(chunks):
                     if index == 0:
                         await message.reply(msg.replace("(img)", ""), mention_author=True, file=discord.File(img_output_path))
@@ -330,7 +285,7 @@ async def on_message(message):
                 os.remove(img_output_path)
             
             if "(tts)" not in msg and "(img)" not in msg:
-                chunks = await split_string(response['message']['content'])
+                chunks = await hf.split_string(response['message']['content'])
                 for index, chunk in enumerate(chunks):
                     if index == 0:
                         await message.reply(chunk, mention_author=True)
@@ -375,6 +330,8 @@ async def on_message(message):
     
             
                 
-
+#=============================================#
+##################START BOT####################
+#=============================================#
 StaicyStart()
 bot.run(bot_token)
