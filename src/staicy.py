@@ -299,14 +299,14 @@ async def on_message(message):
                 job_id = ProcessTTS()
                 await check_comfyui_api(job_id)
                 await message.reply(response['message']['content'], mention_author=True, file=discord.File(tts_output_path))
-                await os.remove(tts_output_path)
+                os.remove(tts_output_path)
             
             if "(img)" in msg:
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""), "imagetext.txt")
                 job_id = ProcessTTS("Painter.json")
                 await check_comfyui_api(job_id)
                 await message.reply(msg.replace("(img)", ""), mention_author=True, file=discord.File(img_output_path))
-                await os.remove(img_output_path)
+                os.remove(img_output_path)
             
             if "(tts)" not in msg and "(img)" not in msg:
                 await message.reply(response['message']['content'], mention_author=True)
