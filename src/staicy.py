@@ -31,7 +31,6 @@ chat_session_current = hf.load_from_file("session.chat")
 #=============================================#
 bot_token = os.getenv("BOT_TOKEN")
 staicy_id = os.getenv("STAICY_ID")
-creator_id = os.getenv("CREATOR_ID")
 lukan_id = int(os.getenv("LUKAN_ID"))
 tts_output_path = os.getenv("TTS_OUTPUT_PATH")
 img_output_path = os.getenv("IMG_OUTPUT_PATH")
@@ -110,19 +109,6 @@ async def ltts(interaction: discord.Interaction, text: str):
     await interaction.followup.send(f"{interaction.user.mention}: {text}", file=discord.File(tts_output_path))
     os.remove(tts_output_path)
     
-    """# Create a gTTS object
-    tts = gTTS(text=text, lang=lang)
-    
-    # Save the audio file
-    audio_file = "output.mp3"
-    tts.save(audio_file)
-
-    # Send the audio file back to the user
-    await interaction.followup.send(f"```{text}```", file=discord.File(audio_file))
-
-    # Optionally, delete the file after sending
-    os.remove(audio_file)"""
-    
 @bot.tree.command(name="greet", description="Greet a user")
 async def greet(interaction: discord.Interaction, user: discord.User):
     await interaction.response.send_message(f"Hello, {user.mention}!")
@@ -172,7 +158,7 @@ async def status(interaction: discord.Interaction, status: str):
 
 @bot.tree.command(name="cache_refresh", description="If you're Lukan, this will clear her cached messages")
 async def CacheRefresh(interaction: discord.Interaction, status: str = "Filed away!"):
-    if interaction.user.name == "lukan.spellweaver":
+    if interaction.user.id== lukan_id:
         chat_session_current.clear()
         await interaction.response.send_message(f"{status}")
     else:
