@@ -21,23 +21,28 @@ async def SaveOutput( _text: str, filename: str = "text.txt"):
 # this should be in the root of the project, 
 # mine is included, but not all files may be!
 def ProcessTTS(workload: str = "Staicy.json"):
-    with open(workload, "r") as f:
-        workflow = json.load(f)
+    try:
+        with open(workload, "r") as f:
+            workflow = json.load(f)
 
-    # Define the payload
-    payload = {
-        "prompt": workflow  # Optional, can be generated
-    }
-    # Send the request
-    response = requests.post(prompt_url, json=payload)
+        # Define the payload
+        payload = {
+            "prompt": workflow  # Optional, can be generated
+        }
+        # Send the request
+        response = requests.post(prompt_url, json=payload)
 
-    # Check the response
-    if response.status_code == 200:
-        id = response.json()["prompt_id"]
-        print("Request successful:", id)
-        return id
-    else:
-        print("Error:", response.status_code, response.text)
+        # Check the response
+        if response.status_code == 200:
+            id = response.json()["prompt_id"]
+            print("Request successful:", id)
+            return id
+        else:
+            print("Error:", response.status_code, response.text)
+            return -1
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return -1
 
 
         

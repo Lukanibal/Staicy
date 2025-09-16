@@ -79,6 +79,7 @@ def StaicyStart():
     )
     print(f"# Client: {response.status}")
 
+#unloads the llma from memory for other processes to grab vram
 async def StaicyStop():
     response = await asyncio.to_thread(
             chat,
@@ -107,6 +108,9 @@ async def ltts(interaction: discord.Interaction, text: str):
     await interaction.response.defer(thinking=True)
     await SaveOutput(e.replace_emoji(text, ""))
     job_id = ProcessTTS()
+    if job_id == -1:
+        await interaction.followup.send(f"Sorry, {interaction.user.mention}, but my Text-To-Speech services are currently offline.")
+        return
     await check_comfyui_api(job_id)
     await interaction.followup.send(f"{interaction.user.mention}: {text}", file=discord.File(tts_output_path))
     os.remove(tts_output_path)
@@ -218,7 +222,29 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
     # Send the reminder
     await interaction.followup.send(f"{interaction.user.mention}:  {name}")
 
+@bot.tree.command(name="lemons1", description="lemons?")
+async def lemons1(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+    await SaveOutput(prompts.lemons[0])
+    job_id = ProcessTTS()
+    if job_id == -1:
+        await interaction.followup.send(f"Sorry, {interaction.user.mention}, but my Text-To-Speech services are currently offline.")
+        return
+    await check_comfyui_api(job_id)
+    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[0]}", file=discord.File(tts_output_path))
+    os.remove(tts_output_path)
 
+@bot.tree.command(name="lemons2", description="lemons, again?")
+async def lemons1(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+    await SaveOutput(prompts.lemons[1])
+    job_id = ProcessTTS()
+    if job_id == -1:
+        await interaction.followup.send(f"Sorry, {interaction.user.mention}, but my Text-To-Speech services are currently offline.")
+        return
+    await check_comfyui_api(job_id)
+    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[1]}", file=discord.File(tts_output_path))
+    os.remove(tts_output_path)
 #=============================================#
 ##############MESSAGE HANDLING#################
 #=============================================#
@@ -260,6 +286,9 @@ async def on_message(message):
             if "(tts)" in msg:
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""))
                 job_id = ProcessTTS()
+                if job_id == -1:
+                    await message.channel.send(f"{response['message']['content']}\r\nSorry, {message.author.mention}, but my Text-To-Speech services are currently offline.")
+                    return
                 await check_comfyui_api(job_id)
                 chunks = await hf.split_string(response['message']['content'])
                 for index, chunk in enumerate(chunks):
@@ -272,6 +301,9 @@ async def on_message(message):
             if "(img)" in msg:
                 await SaveOutput(e.replace_emoji(response['message']['content'], ""), "imagetext.txt")
                 job_id = ProcessTTS("Painter.json")
+                if job_id == -1:
+                    await message.channel.send(f"Sorry, {message.author.mention}, but my image generation services are currently offline.")
+                    return
                 await check_comfyui_api(job_id)
                 chunks = await hf.split_string(response['message']['content'])
                 for index, chunk in enumerate(chunks):
