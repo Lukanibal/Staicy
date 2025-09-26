@@ -12,6 +12,7 @@ def command_set_activity(name : str = ""):
         discord.Activity(type=discord.ActivityType.watching, name="Court TV - Judge Judy"),
         discord.Activity(type=discord.ActivityType.listening, name="Magdalena Bay - Money Lover"),
         discord.Activity(type=discord.ActivityType.listening, name="Caroline Polachek - So Hot You're Hurting My Feelings"),
+        discord.Activity(type=discord.ActivityType.listening, name="Debii Dawson - You Killed The Music"),
         discord.CustomActivity(name="Filing", emoji='🗃️'),
         discord.CustomActivity(name="Assisting in any way I can", emoji='☑️'),
     ]

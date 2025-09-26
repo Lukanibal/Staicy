@@ -1,62 +1,153 @@
 {
-  "15": {
+  "3": {
     "inputs": {
-      "audio": "audio(2).mp3",
-      "audioUI": ""
-    },
-    "class_type": "LoadAudio",
-    "_meta": {
-      "title": "LoadAudio"
-    }
-  },
-  "37": {
-    "inputs": {
-      "text": [
-        "39",
+      "seed": 377962502059275,
+      "steps": 20,
+      "cfg": 5.45,
+      "sampler_name": "euler",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "4",
         0
       ],
-      "model": "VibeVoice-1.5B",
-      "attention_type": "sage",
-      "free_memory_after_generate": true,
-      "diffusion_steps": 30,
-      "seed": 38,
-      "cfg_scale": 1.45,
-      "use_sampling": true,
-      "temperature": 0.95,
-      "top_p": 0.95,
-      "max_words_per_chunk": 250,
-      "voice_to_clone": [
-        "15",
+      "positive": [
+        "16",
+        0
+      ],
+      "negative": [
+        "40",
+        0
+      ],
+      "latent_image": [
+        "53",
         0
       ]
     },
-    "class_type": "VibeVoiceSingleSpeakerNode",
+    "class_type": "KSampler",
     "_meta": {
-      "title": "VibeVoice Single Speaker"
+      "title": "KSampler"
     }
   },
-  "39": {
+  "4": {
     "inputs": {
-      "file": "input/text.txt"
+      "ckpt_name": "sd3.5_medium.safetensors"
     },
-    "class_type": "LoadTextFromFileNode",
+    "class_type": "CheckpointLoaderSimple",
     "_meta": {
-      "title": "VibeVoice Load Text From File"
+      "title": "Load Checkpoint"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "16": {
+    "inputs": {
+      "text": [
+        "54",
+        0
+      ],
+      "clip": [
+        "43",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
     }
   },
   "40": {
     "inputs": {
-      "filename_prefix": "",
-      "quality": "320k",
-      "audioUI": "",
-      "audio": [
-        "37",
+      "text": "",
+      "clip": [
+        "43",
         0
       ]
     },
-    "class_type": "SaveAudioMP3",
+    "class_type": "CLIPTextEncode",
     "_meta": {
-      "title": "Save Audio (MP3)"
+      "title": "Negative Prompt"
+    }
+  },
+  "41": {
+    "inputs": {
+      "clip_name": "t5xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "sd3",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "42": {
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "clip_g.safetensors",
+      "type": "sd3",
+      "device": "default"
+    },
+    "class_type": "DualCLIPLoader",
+    "_meta": {
+      "title": "DualCLIPLoader"
+    }
+  },
+  "43": {
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "clip_g.safetensors",
+      "clip_name3": "t5xxl_fp8_e4m3fn_scaled.safetensors"
+    },
+    "class_type": "TripleCLIPLoader",
+    "_meta": {
+      "title": "TripleCLIPLoader"
+    }
+  },
+  "53": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptySD3LatentImage",
+    "_meta": {
+      "title": "EmptySD3LatentImage"
+    }
+  },
+  "54": {
+    "inputs": {
+      "file": "input/imagetext.txt"
+    },
+    "class_type": "LoadTextFromFileNode",
+    "_meta": {
+      "title": "VibeVoice Load Text From File"
     }
   }
 }

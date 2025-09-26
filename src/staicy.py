@@ -13,6 +13,8 @@ from ollama import Client, chat
 import dateparser
 import emoji as e
 from ltts import SaveOutput, ProcessTTS, check_comfyui_api
+import random
+import bot_limiter as bl
 
 import discord_command_funcs as dcf
 
@@ -94,6 +96,10 @@ async def StaicyStop():
 async def ping(interaction: discord.Interaction):
     await interaction.response.send_message('pong!')
 
+@bot.tree.command(name="read_that_back", description="She'll read back dictation")
+async def ping(interaction: discord.Interaction, text: str = "Hello!"):
+    await interaction.response.send_message(f"{text}")
+
 @bot.tree.command(name="time", description="returns the current time in Lukan's timezone(PST/PDT)")
 async def time(interaction: discord.Interaction):
     current_time = datetime.datetime.now()
@@ -133,7 +139,7 @@ async def redact(interaction: discord.Interaction, id: str):
 async def obliviate(interaction: discord.Interaction):
     if interaction.user.id == lukan_id:
         chat_session_current.clear()
-        await interaction.response.send_message("Huh?")
+        await interaction.response.send_message("Huh!")
     else:
         await interaction.response.send_message("Stupefy!")
 
@@ -176,7 +182,7 @@ async def imagine(interaction: discord.Interaction, prompt: str):
     chunks = await dcf.imagine(interaction, prompt)
     for index, chunk in enumerate(chunks):
         if index == 0:
-            await interaction.followup.send(f"{interaction.user.mention}: {prompt}\r\n{chunk}", file=discord.File(img_output_path))
+            await interaction.followup.send(f"{interaction.user.mention}: {chunk}",  file=discord.File(img_output_path))
         else:
             await interaction.followup.send(chunk)
     os.remove(img_output_path)
@@ -204,46 +210,17 @@ async def schedule(interaction: discord.Interaction, name: str, time: str, date:
     # Send the reminder
     await interaction.followup.send(f"{interaction.user.mention}:  {name}")
 
-    # hand over info to the function
-    delay, formatted = await dcf.schedule(name, time, date)
-
-    if delay is None or -1:
-        await interaction.followup.send("I couldn't understand the time you provided. Please try again.")
-        return
-    if delay == -2:
-        await interaction.followup.send("Oh dear, that time's gone by!\r\nCan you please try again with a date and time in the future?")
-        return
-
-    await interaction.followup.send(f"Reminder set for {formatted}.")
-    # Wait for the specified time
-    # todo -- probably not a good thing to just have this command waiting for the set time, probably change it to some time controller
-    # like wise because of this current way of doing it, this is probably the best im able to clean up
-    await asyncio.sleep(delay)
-    # Send the reminder
-    await interaction.followup.send(f"{interaction.user.mention}:  {name}")
-
 @bot.tree.command(name="lemons1", description="lemons?")
 async def lemons1(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True)
-    await SaveOutput(prompts.lemons[0])
-    job_id = ProcessTTS()
-    if job_id == -1:
-        await interaction.followup.send(f"Sorry, {interaction.user.mention}, but my Text-To-Speech services are currently offline.")
-        return
-    await check_comfyui_api(job_id)
-    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[0]}", file=discord.File(tts_output_path))
+    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[0]}", file=discord.File("sounds/lemons1.mp3"))
     os.remove(tts_output_path)
 
 @bot.tree.command(name="lemons2", description="lemons, again?")
 async def lemons1(interaction: discord.Interaction):
     await interaction.response.defer(thinking=True)
-    await SaveOutput(prompts.lemons[1])
-    job_id = ProcessTTS()
-    if job_id == -1:
-        await interaction.followup.send(f"Sorry, {interaction.user.mention}, but my Text-To-Speech services are currently offline.")
-        return
-    await check_comfyui_api(job_id)
-    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[1]}", file=discord.File(tts_output_path))
+    
+    await interaction.followup.send(f"{interaction.user.mention}: {prompts.lemons[1]}", file=discord.File("sounds/lemons2.mp3"))
     os.remove(tts_output_path)
 #=============================================#
 ##############MESSAGE HANDLING#################
@@ -254,6 +231,15 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    if message.author.bot:
+        bot_check = bl.handle_bot_message(message.author.name)
+        if bot_check == -1:
+            return
+        if bot_check == 0:
+            pass
+    
+     # Check if the bot is mentioned in the message
+
     if bot.user in message.mentions:
         async with message.channel.typing():
             msg = message.content.replace(f"<@{staicy_id}>", "")
@@ -331,11 +317,18 @@ async def on_message(message):
         response = await asyncio.to_thread(
         chat,
         model="Staicy",
-        messages=[{'role': 'system', 'content': "reply only with the first unicode emoji the following message makes you think of and nothing else:"}, {'role': 'user', 'name': message.author.global_name, 'content': message.content}]
+        messages=[{'role': 'system', 'content': "reply only with a list of between 0 and 4 unicode emojis the following message makes you think of and nothing else, no emojis if you don't want to react:"}, {'role': 'user', 'name': message.author.global_name, 'content': message.content}]
         )
-        emote = e.distinct_emoji_list(response['message']['content'])
 
-        await message.add_reaction(emote[0])
+        numbers = [0, 1, 2, 3, 4]
+        weights = [75, 65, 25, 10, 5] 
+
+        weighted_random_number = random.choices(numbers, weights=weights, k=1)[0]
+        
+        emote = e.distinct_emoji_list(response['message']['content'])
+        for i in range(0, weighted_random_number):
+            await message.add_reaction(emote[i])
+        
         await StaicyStop()
     
             
