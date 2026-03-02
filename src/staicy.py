@@ -152,13 +152,15 @@ async def search(interaction: discord.Interaction, query: str):
     await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
 
 @bot.tree.command(name="news", description="Staicy will share the current affairs")
-async def news(interaction: discord.Interaction, query: str, country: str = "us"):
+async def news(interaction: discord.Interaction, query: str = "", country: str = "us"):
     await interaction.response.defer(thinking=True)
     
-    answer = await hf.get_news(query, country)
-        
-    await interaction.followup.send(f"Alright, {interaction.user.mention}, this is what I found:\r\n{answer}")
-
+    #answer = await hf.get_news(query, country)
+    title, description, pub_date, link, image = await hf.get_news(query, country)
+    embed = discord.Embed(title=title, description=f"{description} \r\n [Read More]({link}) \r\n Published: {pub_date}", color=discord.Color.pink())   
+    embed.set_image(url=image)
+    await interaction.followup.send(embed=embed)
+#![Alt text](https://assets.digitalocean.com/articles/alligator/boo.svg "a title")
 @bot.tree.command(name="status", description="If you're Lukan, this will set her status")
 async def status(interaction: discord.Interaction, status: str = ""):
     if interaction.user.id == lukan_id:

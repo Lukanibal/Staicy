@@ -66,7 +66,8 @@ async def get_news(query, country):
             link = article['link']
             description = article['description']
             pub_date = article['pubDate']
+            image_url = article['image_url']
 
             # Format the message
-            message = f"**{title}**\n{description}\nPublished on: {pub_date}\n[Read more]({link})"
+            message = title, description, pub_date, link, image_url#f"**{title}**\n{description}\nPublished on: {pub_date}\n[Read more]({link})"
             return message
